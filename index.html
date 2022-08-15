@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap@5.2/dist/css/bootstrap.min.css">
+<style>
+  tr, td {
+    text-align: center;
+    vertical-align: middle;
+  }
+  small {
+    color: #666;
+  }
+</style>
+<title>프로세카 이벤트 목록</title>
+</head>
+<body>
+<div id="app">
+  <nav class="navbar bg-light">
+    <div class="container-fluid">
+      <a href="" class="navbar-brand">프로세카 이벤트 목록</a>
+    </div>
+  </nav>
+  <div class="container">
+    <table class="table">
+      <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">제목</th>
+        <th scope="col">종류</th>
+        <th scope="col">기간(일본)</th>
+        <th scope="col">기간(한국)</th>
+        <th scope="col">격차</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr v-for="event in events" :key="event.id">
+        <td>{{event.id}}</td>
+        <td>
+          <span v-if="event.title">{{event.title}}<br></span>
+          <small>{{event.originalTitle}}</small>
+        </td>
+        <td>
+          {{event.type || event.originalType}}
+          <small v-if="event.type && event.type !== event.originalType"><br>({{event.originalType}})</small>
+        </td>
+        <td>
+          {{event.originalDate}}
+          <br>
+          ({{event.originalPeriod}}일간)
+        </td>
+        <td>
+          <template v-if="event.date">
+            {{event.date}}
+            <br>
+            ({{event.period}}일간)
+          </template>
+          <span class="text-muted" v-else>
+            {{event.expectedDate}}?
+            <br>
+            ({{event.expectedPeriod}}일간?)
+          </span>
+        </td>
+        <td>
+          <template v-if="event.diff">{{event.diff}}일</template>
+          <span class="text-muted" v-else>
+            {{event.expectedDiff}}일?
+          </span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script src="https://unpkg.com/bootstrap@5.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/vue@next"></script>
+<script src="https://unpkg.com/axios@0.27"></script>
+<script>
+const EVENT_CYCLE_KR = 8;
+
+function eventType2Text(type) {
+  switch(type) {
+    case 'marathon':
+      return '일반';
+    case 'cheerful_carnival':
+      return '치어풀';
+  }
+}
+function zerofill(num, length = 2) {
+  let str = num.toString();
+  while(str.length < length) {
+    str = `0${str}`;
+  }
+  return str;
+}
+function timestamp2DateText(timestamp) {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${zerofill(date.getMonth() + 1)}-${zerofill(date.getDate())}`;
+}
+function getPeriod(start, end) {
+  let startDate = new Date(start);
+  let endDate = new Date(end);
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+  return Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+}
+const app = {
+  data() {
+    return {
+      eventsDataJP: [],
+      eventsDataKR: [],
+    }
+  },
+  computed: {
+    events() {
+      let lastEventStartAt = 0;
+      if(!this.eventsDataJP.length) {
+        return [];
+      }
+      return this.eventsDataJP.map((eventDataOrigin) => {
+        let event = {
+          id: eventDataOrigin.id,
+          originalTitle: eventDataOrigin.name,
+          originalType: eventType2Text(eventDataOrigin.eventType),
+          originalDate: timestamp2DateText(eventDataOrigin.startAt),
+          originalPeriod: getPeriod(eventDataOrigin.startAt, eventDataOrigin.aggregateAt) + 1,
+        }
+        const eventData = this.eventsDataKR.find((eventData) => {
+          return eventData.id === eventDataOrigin.id;
+        });
+        if(eventData) {
+          event.title = eventData.name;
+          event.type = eventType2Text(eventData.eventType);
+          event.date = timestamp2DateText(eventData.startAt);
+          event.period = getPeriod(eventData.startAt, eventData.aggregateAt) + 1;
+          event.diff = getPeriod(eventDataOrigin.startAt, eventData.startAt);
+          if(lastEventStartAt < eventData.startAt) {
+            lastEventStartAt = eventData.startAt;
+          }
+        }
+        else {
+          const expectedTimestamp = lastEventStartAt + (1000 * 60 * 60 * 24 * EVENT_CYCLE_KR * (event.id - this.eventsDataKR[this.eventsDataKR.length - 1].id));
+          event.expectedDate = timestamp2DateText(expectedTimestamp);
+          event.expectedPeriod = EVENT_CYCLE_KR - 1;
+          event.expectedDiff = getPeriod(eventDataOrigin.startAt, expectedTimestamp);
+        }
+        return event;
+      });
+    },
+
+  },
+  created() {
+    axios.get('sekai-master-db-diff/events.json')
+    .then((res) => {
+      this.eventsDataJP = res.data;
+    });
+    axios.get('sekai-master-db-kr-diff/events.json')
+    .then((res) => {
+      this.eventsDataKR = res.data;
+    });
+  }
+};
+
+Vue.createApp(app).mount('#app');
+</script>
+</body>
+</html>
