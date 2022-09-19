@@ -87,7 +87,7 @@
 <script src="https://unpkg.com/vue@next"></script>
 <script src="https://unpkg.com/axios@0.27"></script>
 <script>
-const EVENT_CYCLE_KR = 8;
+const EVENT_CYCLE_KR = 7;
 
 function eventType2Text(type) {
   switch(type) {
@@ -153,7 +153,7 @@ const app = {
         else {
           const expectedTimestamp = lastEventStartAt + (1000 * 60 * 60 * 24 * EVENT_CYCLE_KR * (event.id - this.eventsDataKR[this.eventsDataKR.length - 1].id));
           event.expectedDate = timestamp2DateText(expectedTimestamp);
-          event.expectedPeriod = EVENT_CYCLE_KR - 1;
+          event.expectedPeriod = EVENT_CYCLE_KR;
           event.expectedDiff = getPeriod(eventDataOrigin.startAt, expectedTimestamp);
         }
         return event;
