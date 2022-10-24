@@ -13,15 +13,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Pull
-        run: git pull --recurse-submodules
       - name: Update submodules
-        run: git submodule update --remote --rebase
+        run: git submodule update --remote
       - name: Commit changes
         run: |
           git config --local user.email "robin_maki@planet.moe"
           git config --local user.name "pjsekai-event-diff-bot"
-          git add *
           git commit -am "Update event data"
       - name: Push changes
         uses: ad-m/github-push-action@master
