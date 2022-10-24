@@ -16,12 +16,13 @@ jobs:
       - name: Pull
         run: git pull --recurse-submodules
       - name: Update submodules
-        run: git submodule update --remote
+        run: git submodule update --remote --rebase
       - name: Commit changes
         run: |
           git config --local user.email "robin_maki@planet.moe"
           git config --local user.name "pjsekai-event-diff-bot"
-          git commit -m "Update event data"
+          git add *
+          git commit -am "Update event data"
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
