@@ -1,0 +1,23 @@
+name: event-update
+on:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Update submodules
+        run: git submodule update --remote --merge
+      - name: Commit changes
+        run: |
+          git config --local user.email "robin_maki@planet.moe"
+          git config --local user.name "pjsekai-event-diff-bot"
+          git commit -m "Update event data"
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
