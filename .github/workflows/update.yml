@@ -16,7 +16,7 @@ jobs:
       - name: Pull
         run: git pull --recurse-submodules
       - name: Update submodules
-        run: git submodule update --remote --merge
+        run: git submodule update --remote
       - name: Commit changes
         run: |
           git config --local user.email "robin_maki@planet.moe"
