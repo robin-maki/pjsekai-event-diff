@@ -19,7 +19,7 @@ jobs:
         run: |
           git config --local user.email "robin_maki@planet.moe"
           git config --local user.name "pjsekai-event-diff-bot"
-          git commit -am "Update event data"
+          git commit -am "Update event data" || true
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
